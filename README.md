@@ -181,6 +181,17 @@ Command grammar comparison, with the optimized decoder:
 The command grammar had the strongest impact: it kept recognition correct and
 reduced recognition latency by about 10x on this test audio.
 
+Model memory experiment:
+
+| Model Variant | Load Time | RAM After Load |
+| --- | ---: | ---: |
+| Original Vosk model | 0.809s | 147.9MB |
+| Without `ivector/` | 0.632s | 133.0MB |
+
+Removing `ivector/` reduced runtime RAM by about 14.9MB and disk size by about
+8.5MB in a temporary model copy. This removes speaker-adaptation files, so it
+should be accuracy-tested with the target microphone and speaker.
+
 ## Setup
 
 This project uses `uv` and expects Python 3.13.
