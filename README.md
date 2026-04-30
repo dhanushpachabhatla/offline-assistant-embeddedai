@@ -135,13 +135,51 @@ $env:UV_CACHE_DIR = (Resolve-Path '.').Path + '\.uv-cache'
 uv run python -m metrics.benchmark
 ```
 
-Example result from this machine:
+Fixed-audio recognition benchmark:
+
+```powershell
+uv run python -m metrics.audio_benchmark --input open_chrome.mp4 --runs 5
+```
+
+MP4 input requires `ffmpeg` on PATH. You can also pass a 16 kHz mono WAV file.
+
+General benchmark example from this machine:
 
 ```text
 [benchmark] profile=desktop
 [benchmark] grammar_terms=118
 [benchmark] parser_samples=0.005s | vosk_load=1.008s | parser_mem=23.6MB | vosk_load_mem=49.1MB | parser_cpu=16.2% | vosk_load_cpu=30.2%
 ```
+
+Fixed-audio result using `open_chrome_16k.wav`:
+
+Decoder tuning comparison, with command grammar enabled in both runs:
+
+| Metric | Before | After |
+| --- | ---: | ---: |
+| Vosk load time | 0.664s | 0.641s |
+| Recognition latency avg | 0.112s | 0.109s |
+| Memory after Vosk load | 151.8MB | 153.6MB |
+| CPU sample | 3.0% | 0.0% |
+| Recognized text | open chrome | open chrome |
+| Parsed intent | open_app | open_app |
+
+The optimized decoder reduced load time, recognition latency, and CPU sample
+while preserving the recognized command. Memory was roughly unchanged.
+
+Command grammar comparison, with the optimized decoder:
+
+| Metric | Grammar ON | Grammar OFF |
+| --- | ---: | ---: |
+| Vosk load time | 0.714s | 0.751s |
+| Recognition latency avg | 0.116s | 1.108s |
+| Memory after Vosk load | 153.7MB | 154.4MB |
+| CPU sample | 18.0% | 26.3% |
+| Recognized text | open chrome | open could own |
+| Parsed intent | open_app | open_app |
+
+The command grammar had the strongest impact: it kept recognition correct and
+reduced recognition latency by about 10x on this test audio.
 
 ## Setup
 
@@ -193,22 +231,20 @@ uv run python jarvis.py "restart"
 
 ## Model Inventory
 
-There is one model folder committed in the repo:
+One model folder is committed in the repo:
 
 ```text
 models/vosk-model-small-en-us-0.15
 ```
 
-It is a small US English Vosk speech-to-text model, about 71 MB on disk.
-
-Runtime also uses a built-in `pymicro_wakeword` model:
+It is a small US English Vosk speech-to-text model, about 71 MB on disk. Runtime
+also uses a built-in `pymicro_wakeword` model:
 
 ```text
 Model.OKAY_NABU
 ```
 
-That wake model is loaded from the Python package, not from the repo's `models`
-folder.
+That wake model is loaded from the Python package, not from `models/`.
 
 ## Embedded Notes
 
